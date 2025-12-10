@@ -27,6 +27,11 @@ export ANTHROPIC_API_KEY='your-api-key-here'
 export CLAUDE_CODE_OAUTH_TOKEN='your-oauth-token-here'
 ```
 
+**Custom Claude CLI Path (optional):** If Claude is installed in a non-standard location (e.g., `~/.claude/local/claude`), the script will automatically detect it. You can also set it explicitly:
+```bash
+export CLAUDE_CLI_PATH='/path/to/claude'
+```
+
 ## Quick Start
 
 ```bash

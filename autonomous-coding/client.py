@@ -62,6 +62,29 @@ def get_api_key() -> str:
     return api_key
 
 
+def get_cli_path() -> str | None:
+    """
+    Get the Claude CLI path from environment variable or default location.
+
+    Checks CLAUDE_CLI_PATH env var first, then falls back to ~/.claude/local/claude.
+
+    Returns:
+        Path to Claude CLI binary, or None to use SDK default search
+    """
+    # Check env var first
+    cli_path = os.environ.get("CLAUDE_CLI_PATH")
+    if cli_path:
+        return cli_path
+
+    # Check common location for local Claude installation
+    home_claude = Path.home() / ".claude" / "local" / "claude"
+    if home_claude.exists():
+        return str(home_claude)
+
+    # Let SDK find it
+    return None
+
+
 def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     """
     Create a Claude Agent SDK client with multi-layered security.
@@ -119,6 +142,11 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     print("   - MCP servers: puppeteer (browser automation)")
     print()
 
+    # Get CLI path (supports custom installations like ~/.claude/local/claude)
+    cli_path = get_cli_path()
+    if cli_path:
+        print(f"   - Using Claude CLI at: {cli_path}")
+
     return ClaudeSDKClient(
         options=ClaudeCodeOptions(
             model=model,
@@ -138,5 +166,6 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
             max_turns=1000,
             cwd=str(project_dir.resolve()),
             settings=str(settings_file.resolve()),  # Use absolute path
+            cli_path=cli_path,
         )
     )
