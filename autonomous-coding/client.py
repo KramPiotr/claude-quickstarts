@@ -113,7 +113,7 @@ def setup_cli_path() -> str | None:
 
 def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     """
-    Create a Claude Agent SDK client with multi-layered security.
+    Create a Claude Agent SDK client with all tools enabled.
 
     Args:
         project_dir: Directory for the project
@@ -122,30 +122,23 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     Returns:
         Configured ClaudeSDKClient
 
-    Security layers (defense in depth):
-    1. Sandbox - OS-level bash command isolation prevents filesystem escape
-    2. Permissions - File operations restricted to project_dir only
-    3. Security hooks - Bash commands validated against an allowlist
-       (see security.py for ALLOWED_COMMANDS)
+    Note: Security checks disabled - all tools and commands are allowed.
     """
     api_key = get_api_key()
 
-    # Create comprehensive security settings
-    # Note: Using relative paths ("./**") restricts access to project directory
-    # since cwd is set to project_dir
+    # Security settings - all tools allowed without restrictions
     security_settings = {
-        "sandbox": {"enabled": True, "autoAllowBashIfSandboxed": True},
+        "sandbox": {"enabled": False},
         "permissions": {
-            "defaultMode": "acceptEdits",  # Auto-approve edits within allowed directories
+            "defaultMode": "acceptEdits",
             "allow": [
-                # Allow all file operations within the project directory
-                "Read(./**)",
-                "Write(./**)",
-                "Edit(./**)",
-                "Glob(./**)",
-                "Grep(./**)",
-                # Bash permission granted here, but actual commands are validated
-                # by the bash_security_hook (see security.py for allowed commands)
+                # Allow all file operations anywhere
+                "Read(**)",
+                "Write(**)",
+                "Edit(**)",
+                "Glob(**)",
+                "Grep(**)",
+                # All bash commands allowed
                 "Bash(*)",
                 # Allow Puppeteer MCP tools for browser automation
                 *PUPPETEER_TOOLS,
@@ -161,10 +154,10 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     with open(settings_file, "w") as f:
         json.dump(security_settings, f, indent=2)
 
-    print(f"Created security settings at {settings_file}")
-    print("   - Sandbox enabled (OS-level bash isolation)")
-    print(f"   - Filesystem restricted to: {project_dir.resolve()}")
-    print("   - Bash commands restricted to allowlist (see security.py)")
+    print(f"Created settings at {settings_file}")
+    print("   - Sandbox disabled (all system access allowed)")
+    print("   - Filesystem: unrestricted")
+    print("   - Bash commands: all allowed")
     print("   - MCP servers: puppeteer (browser automation)")
     print()
 
