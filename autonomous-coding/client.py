@@ -62,26 +62,44 @@ def get_api_key() -> str:
     return api_key
 
 
-def get_cli_path() -> str | None:
+def setup_cli_path() -> str | None:
     """
-    Get the Claude CLI path from environment variable or default location.
+    Ensure Claude CLI is findable by the SDK.
 
-    Checks CLAUDE_CLI_PATH env var first, then falls back to ~/.claude/local/claude.
+    The SDK uses shutil.which("claude") to find the CLI. This function adds
+    common Claude installation directories to PATH so the SDK can find it.
 
     Returns:
-        Path to Claude CLI binary, or None to use SDK default search
+        Path to Claude CLI if found, None otherwise
     """
-    # Check env var first
-    cli_path = os.environ.get("CLAUDE_CLI_PATH")
-    if cli_path:
-        return cli_path
+    import shutil
 
-    # Check common location for local Claude installation
-    home_claude = Path.home() / ".claude" / "local" / "claude"
-    if home_claude.exists():
-        return str(home_claude)
+    # If already findable, we're done
+    if shutil.which("claude"):
+        return shutil.which("claude")
 
-    # Let SDK find it
+    # Common Claude CLI locations to check and add to PATH
+    cli_locations = [
+        Path.home() / ".claude" / "local",  # Local Claude installation
+        Path.home() / ".npm-global" / "bin",
+        Path.home() / "node_modules" / ".bin",
+    ]
+
+    # Check CLAUDE_CLI_PATH env var
+    if cli_path_env := os.environ.get("CLAUDE_CLI_PATH"):
+        cli_dir = Path(cli_path_env).parent
+        cli_locations.insert(0, cli_dir)
+
+    # Add directories containing claude binary to PATH
+    for location in cli_locations:
+        claude_path = location / "claude"
+        if claude_path.exists():
+            # Add to PATH so SDK can find it
+            current_path = os.environ.get("PATH", "")
+            if str(location) not in current_path:
+                os.environ["PATH"] = f"{location}:{current_path}"
+            return str(claude_path)
+
     return None
 
 
@@ -142,10 +160,12 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     print("   - MCP servers: puppeteer (browser automation)")
     print()
 
-    # Get CLI path (supports custom installations like ~/.claude/local/claude)
-    cli_path = get_cli_path()
+    # Ensure Claude CLI is findable (adds to PATH if needed)
+    cli_path = setup_cli_path()
     if cli_path:
         print(f"   - Using Claude CLI at: {cli_path}")
+    else:
+        print("   - Warning: Claude CLI not found, SDK will attempt to locate it")
 
     return ClaudeSDKClient(
         options=ClaudeCodeOptions(
@@ -166,6 +186,5 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
             max_turns=1000,
             cwd=str(project_dir.resolve()),
             settings=str(settings_file.resolve()),  # Use absolute path
-            cli_path=cli_path,
         )
     )
