@@ -37,6 +37,31 @@ BUILTIN_TOOLS = [
 ]
 
 
+def get_api_key() -> str:
+    """
+    Get the API key from environment variables.
+
+    Checks for ANTHROPIC_API_KEY first, then falls back to CLAUDE_CODE_OAUTH_TOKEN.
+    Both work with the Claude API.
+
+    Returns:
+        The API key string
+
+    Raises:
+        ValueError: If neither environment variable is set
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get(
+        "CLAUDE_CODE_OAUTH_TOKEN"
+    )
+    if not api_key:
+        raise ValueError(
+            "Neither ANTHROPIC_API_KEY nor CLAUDE_CODE_OAUTH_TOKEN environment variable is set.\n"
+            "Get your API key from: https://console.anthropic.com/\n"
+            "Or use your Claude Code OAuth token."
+        )
+    return api_key
+
+
 def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     """
     Create a Claude Agent SDK client with multi-layered security.
@@ -54,12 +79,7 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     3. Security hooks - Bash commands validated against an allowlist
        (see security.py for ALLOWED_COMMANDS)
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "ANTHROPIC_API_KEY environment variable not set.\n"
-            "Get your API key from: https://console.anthropic.com/"
-        )
+    api_key = get_api_key()
 
     # Create comprehensive security settings
     # Note: Using relative paths ("./**") restricts access to project directory

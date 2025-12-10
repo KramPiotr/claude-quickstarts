@@ -20,9 +20,11 @@ claude --version  # Should be latest version
 pip show claude-code-sdk  # Check SDK is installed
 ```
 
-**API Key:** Set your Anthropic API key:
+**API Key:** Set your Anthropic API key or Claude Code OAuth token:
 ```bash
 export ANTHROPIC_API_KEY='your-api-key-here'
+# or
+export CLAUDE_CODE_OAUTH_TOKEN='your-oauth-token-here'
 ```
 
 ## Quick Start
@@ -156,7 +158,7 @@ This is normal. The initializer agent is generating 200 detailed test cases, whi
 The agent tried to run a command not in the allowlist. This is the security system working as intended. If needed, add the command to `ALLOWED_COMMANDS` in `security.py`.
 
 **"API key not set"**
-Ensure `ANTHROPIC_API_KEY` is exported in your shell environment.
+Ensure either `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` is exported in your shell environment.
 
 ## License
 
