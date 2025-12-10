@@ -21,7 +21,9 @@ from agent import run_autonomous_agent
 
 
 # Configuration
-DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
+# Use the alias "sonnet" which maps to the latest Sonnet model
+# Full model names like "claude-sonnet-4-5-20250929" may not work with all auth methods
+DEFAULT_MODEL = "sonnet"
 
 
 def parse_args() -> argparse.Namespace:

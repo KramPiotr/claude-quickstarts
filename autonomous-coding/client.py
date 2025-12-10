@@ -67,38 +67,46 @@ def setup_cli_path() -> str | None:
     Ensure Claude CLI is findable by the SDK.
 
     The SDK uses shutil.which("claude") to find the CLI. This function adds
-    common Claude installation directories to PATH so the SDK can find it.
+    preferred Claude installation directories to the FRONT of PATH so they
+    take priority over system installations.
+
+    Priority order:
+    1. CLAUDE_CLI_PATH env var (if set)
+    2. ~/.claude/local/claude (local installation, preferred)
+    3. Other common locations
+    4. System PATH (homebrew, etc.)
 
     Returns:
         Path to Claude CLI if found, None otherwise
     """
     import shutil
 
-    # If already findable, we're done
-    if shutil.which("claude"):
-        return shutil.which("claude")
-
-    # Common Claude CLI locations to check and add to PATH
+    # Preferred Claude CLI locations (in priority order)
     cli_locations = [
-        Path.home() / ".claude" / "local",  # Local Claude installation
+        Path.home() / ".claude" / "local",  # Local Claude installation (preferred)
         Path.home() / ".npm-global" / "bin",
         Path.home() / "node_modules" / ".bin",
     ]
 
-    # Check CLAUDE_CLI_PATH env var
+    # Check CLAUDE_CLI_PATH env var - highest priority
     if cli_path_env := os.environ.get("CLAUDE_CLI_PATH"):
         cli_dir = Path(cli_path_env).parent
         cli_locations.insert(0, cli_dir)
 
-    # Add directories containing claude binary to PATH
+    # Add directories containing claude binary to FRONT of PATH
+    # This ensures our preferred locations take priority over system installs
     for location in cli_locations:
         claude_path = location / "claude"
         if claude_path.exists():
-            # Add to PATH so SDK can find it
+            # Prepend to PATH so it takes priority
             current_path = os.environ.get("PATH", "")
             if str(location) not in current_path:
                 os.environ["PATH"] = f"{location}:{current_path}"
             return str(claude_path)
+
+    # Fall back to whatever is in PATH
+    if shutil.which("claude"):
+        return shutil.which("claude")
 
     return None
 
