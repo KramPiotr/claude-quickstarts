@@ -34,6 +34,11 @@ BUILTIN_TOOLS = [
     "Glob",
     "Grep",
     "Bash",
+    "Task",
+    "WebFetch",
+    "WebSearch",
+    "NotebookEdit",
+    "TodoWrite",
 ]
 
 
@@ -126,24 +131,11 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     """
     api_key = get_api_key()
 
-    # Security settings - all tools allowed without restrictions
+    # Security settings - bypass all permission checks
+    # Using bypassPermissions mode allows ALL tools including any MCP tools
+    # without needing to list them explicitly
     security_settings = {
         "sandbox": {"enabled": False},
-        "permissions": {
-            "defaultMode": "acceptEdits",
-            "allow": [
-                # Allow all file operations anywhere
-                "Read(**)",
-                "Write(**)",
-                "Edit(**)",
-                "Glob(**)",
-                "Grep(**)",
-                # All bash commands allowed
-                "Bash(*)",
-                # Allow Puppeteer MCP tools for browser automation
-                *PUPPETEER_TOOLS,
-            ],
-        },
     }
 
     # Ensure project directory exists before creating settings file
@@ -156,9 +148,8 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
 
     print(f"Created settings at {settings_file}")
     print("   - Sandbox disabled (all system access allowed)")
-    print("   - Filesystem: unrestricted")
-    print("   - Bash commands: all allowed")
-    print("   - MCP servers: puppeteer (browser automation)")
+    print("   - Permission mode: bypassPermissions (all tools auto-approved)")
+    print("   - All MCP tools: auto-approved")
     print()
 
     # Ensure Claude CLI is findable (adds to PATH if needed)
@@ -172,6 +163,9 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
         options=ClaudeCodeOptions(
             model=model,
             system_prompt="You are an expert full-stack developer building a production-quality web application.",
+            # bypassPermissions mode: ALL tools are auto-approved including any MCP tools
+            # This is equivalent to --dangerously-skip-permissions
+            permission_mode="bypassPermissions",
             allowed_tools=[
                 *BUILTIN_TOOLS,
                 *PUPPETEER_TOOLS,
